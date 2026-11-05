@@ -3,684 +3,412 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Series y Transformadas de Fourier - Analizador Interactivo</title>
+    <title>Generador y Analizador de Series de Fourier - ESIME</title>
     <style>
         :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-red: #ef4444;
-            --accent-blue: #38bdf8;
-            --accent-green: #22c55e;
-            --accent-yellow: #f59e0b;
-            --border-color: #475569;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border-color: #334155;
         }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-
         body {
-            background-color: var(--bg-primary);
-            color: var(--text-main);
+            background-color: var(--bg-color);
+            color: var(--text-color);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 1.5rem;
+            align-items: center;
+            padding: 20px;
         }
-
         header {
             text-align: center;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
+            margin-bottom: 20px;
         }
-
-        header h1 {
+        h1 {
             font-size: 1.8rem;
-            color: var(--accent-blue);
-            margin-bottom: 0.3rem;
+            margin-bottom: 5px;
+            color: var(--accent-color);
         }
-
-        header p {
-            color: var(--text-muted);
+        p.subtitle {
             font-size: 0.95rem;
+            color: #94a3b8;
         }
-
-        .main-container {
+        .container {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            flex: 1;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
         }
-
-        @media (min-width: 900px) {
-            .main-container {
-                grid-template-columns: 2fr 1fr;
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
             }
         }
-
-        /* Panel Izquierdo: Gráficos */
-        .plots-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-        }
-
         .card {
-            background-color: var(--bg-secondary);
+            background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
-            padding: 1.2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.8rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-
-        }
-
-        .legend-badge {
-            font-size: 0.8rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 20px;
-            font-weight: normal;
-        }
-
-        .legend-black { background-color: #000; color: #fff; border: 1px solid #666; }
-        .legend-red { background-color: var(--accent-red); color: #fff; }
-        .legend-blue { background-color: var(--accent-blue); color: #000; }
-
-        canvas {
-            width: 100%;
-            height: 230px;
-            background-color: #090d16;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            display: block;
-        }
-
-        /* Panel Derecho: Controles */
-        .controls-panel {
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 1.2rem;
+            gap: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-
-        .control-group {
-            margin-bottom: 1rem;
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background-color: #090d16;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
         }
-
-        .control-group label {
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .controls-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
             display: flex;
             justify-content: space-between;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 0.4rem;
-            color: var(--text-main);
         }
-
-        .val-badge {
-            color: var(--accent-blue);
+        label span {
+            color: var(--accent-color);
             font-weight: bold;
         }
-
-        select, input[type="range"] {
-            width: 100%;
-            background: var(--bg-card);
-            color: var(--text-main);
-            border: 1px solid var(--border-color);
-            padding: 0.6rem;
-            border-radius: 6px;
-            outline: none;
-        }
-
         input[type="range"] {
-            -webkit-appearance: none;
-            height: 8px;
-            border: none;
-            padding: 0;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--accent-blue);
-            cursor: pointer;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin-top: 0.5rem;
-        }
-
-        .btn-audio {
             width: 100%;
-            padding: 0.8rem;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #0f172a;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
             font-size: 1rem;
-            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
             border: none;
             border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            transition: background 0.2s;
         }
-
-        .btn-audio.off {
-            background-color: var(--accent-green);
-            color: #000;
-        }
-
-        .btn-audio.on {
-            background-color: var(--accent-red);
+        #btnPlay {
+            background-color: #22c55e;
             color: #fff;
         }
-
-        .btn-audio:active {
-            transform: scale(0.98);
+        #btnPlay:hover {
+            background-color: #16a34a;
         }
-
-        .info-box {
+        #btnPlay.active {
+            background-color: #ef4444;
+        }
+        #btnPlay.active:hover {
+            background-color: #dc2626;
+        }
+        .info-panel {
             font-size: 0.85rem;
-            color: var(--text-muted);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            background-color: rgba(15, 23, 42, 0.5);
+            padding: 10px;
             border-radius: 6px;
-            border-left: 3px solid var(--accent-blue);
-            margin-top: 0.5rem;
-        }
-
-        footer {
-            margin-top: 1.5rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-color);
-            padding-top: 1rem;
+            border-left: 3px solid var(--accent-color);
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>Series y Transformadas de Fourier</h1>
-        <p>Laboratorio Interactivo de Síntesis de Ondas y Análisis Espectral Discreto</p>
+        <h1>Generador y Analizador de Fourier</h1>
+        <p class="subtitle">ESIME Zacatenco - Ingeniería en Comunicaciones y Electrónica</p>
     </header>
 
-    <div class="main-container">
-        <!-- Panel Izquierdo: Visualizadores -->
-        <div class="plots-panel">
-            <!-- Gráfico 1: Tiempo -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Dominio del Tiempo</span>
-                    <div>
-                        <span class="legend-badge legend-black" id="badge-black">Segmentos Teóricos</span>
-                        <span class="legend-badge legend-red" id="badge-red">Serie Fourier (N)</span>
-                    </div>
-                </div>
-                <canvas id="canvasTime"></canvas>
+    <div class="container">
+        <div class="card">
+            <h3>Dominio del Tiempo (Reforma por Serie)</h3>
+            <div class="canvas-container">
+                <canvas id="timeCanvas"></canvas>
             </div>
-
-            <!-- Gráfico 2: Espectro -->
-            <div class="card">
-                <div class="card-title">
-                    <span>Espectro de Frecuencias (Discreto / Bastones)</span>
-                    <span class="legend-badge legend-blue" id="badge-harmonics">N Bastones</span>
-                </div>
-                <canvas id="canvasSpectrum"></canvas>
+            
+            <h3>Espectro de Frecuencias (Armónicos Discretos)</h3>
+            <div class="canvas-container">
+                <canvas id="freqCanvas"></canvas>
             </div>
         </div>
 
-        <!-- Panel Derecho: Controles -->
-        <div class="controls-panel">
-            <div class="card">
-                <div class="card-title">Controles de Onda</div>
-                
-                <!-- Selector de Forma de Onda -->
-                <div class="control-group">
-                    <label for="waveType">Forma de Onda</label>
-                    <select id="waveType">
-                        <option value="square" selected>Cuadrada (Sumas Impares)</option>
-                        <option value="sawtooth">Diente de Sierra (Sumas Pares/Impares)</option>
-                        <option value="triangle">Triangular (Sumas Rápida Convergencia)</option>
-                        <option value="sine">Seno (Puro - 1 Armónico)</option>
-                        <option value="cosine">Coseno (Puro - 1 Armónico)</option>
-                    </select>
-                </div>
+        <div class="card">
+            <h3>Parámetros de Señal</h3>
+            
+            <div class="controls-group">
+                <label for="waveType">Tipo de Onda:</label>
+                <select id="waveType">
+                    <option value="Seno">Seno Pura</option>
+                    <option value="Coseno">Coseno Pura</option>
+                    <option value="Cuadrada" selected>Onda Cuadrada</option>
+                    <option value="Rampa">Onda Rampa</option>
+                    <option value="Diente de Sierra">Onda Diente de Sierra</option>
+                </select>
+            </div>
 
-                <!-- Slider Frecuencia -->
-                <div class="control-group">
-                    <label for="sliderFreq">
-                        <span>Frecuencia Fundamental (f)</span>
-                        <span class="val-badge" id="valFreq">750 Hz</span>
-                    </label>
-                    <input type="range" id="sliderFreq" min="100" max="2000" step="10" value="750">
-                </div>
+            <div class="controls-group">
+                <label>Frecuencia Fundamental: <span id="freqVal">750</span> Hz</label>
+                <input type="range" id="freqRange" min="100" max="2000" step="1" value="750">
+            </div>
 
-                <!-- Slider Amplitud -->
-                <div class="control-group">
-                    <label for="sliderAmp">
-                        <span>Amplitud (0 a 100)</span>
-                        <span class="val-badge" id="valAmp">50</span>
-                    </label>
-                    <input type="range" id="sliderAmp" min="0" max="100" step="1" value="50">
-                </div>
+            <div class="controls-group">
+                <label>Amplitud (0 - 100): <span id="ampVal">50</span></label>
+                <input type="range" id="ampRange" min="0" max="100" step="1" value="50">
+            </div>
 
-                <!-- Slider Número de Términos -->
-                <div class="control-group">
-                    <label for="sliderTerms">
-                        <span>Número de Términos (N)</span>
-                        <span class="val-badge" id="valTerms">2</span>
-                    </label>
-                    <input type="range" id="sliderTerms" min="1" max="20" step="1" value="2">
-                </div>
+            <div class="controls-group">
+                <label>Términos Armónicos (N): <span id="nVal">5</span></label>
+                <input type="range" id="nRange" min="1" max="20" step="1" value="5">
+            </div>
 
-                <!-- Opciones de Visualización -->
-                <div class="control-group">
-                    <label class="checkbox-group">
-                        <input type="checkbox" id="chkShowIdeal" checked>
-                        <span>Mostrar Onda Teórica por Segmentos (Negra)</span>
-                    </label>
-                    <label class="checkbox-group">
-                        <input type="checkbox" id="chkShowFourier" checked>
-                        <span>Mostrar Serie de Fourier Reconstruida (Roja)</span>
-                    </label>
-                </div>
+            <div class="btn-container">
+                <button id="btnPlay">Reproducir Tono</button>
+            </div>
 
-                <!-- Audio Web API Button -->
-                <div class="control-group" style="margin-top: 1rem;">
-                    <button id="btnAudio" class="btn-audio off">
-                        🔊 Reproducir Tono (Web Audio)
-                    </button>
-                </div>
-
-                <div class="info-box" id="infoText">
-                    <b>Nota de Verificación:</b> Para <i>N = 2</i> términos en onda cuadrada, se muestran exactamente 2 bastones espectrales en la fundamental ($f$) y el tercer armónico ($3f$).
-                </div>
+            <div class="info-panel">
+                <strong>Nota:</strong> Al ajustar <em>N = 2</em> en onda cuadrada, se visualizan exactamente 2 líneas espectrales puras, validando la teoría de armónicos discretos.
             </div>
         </div>
     </div>
 
-    <footer>
-        <p>Documento & Herramienta Didáctica de Series de Fourier — Listo para subir a GitHub Pages</p>
-    </footer>
-
     <script>
-        // --- Referencias DOM ---
-        const canvasTime = document.getElementById('canvasTime');
-        const canvasSpectrum = document.getElementById('canvasSpectrum');
-        const ctxTime = canvasTime.getContext('2d');
-        const ctxSpectrum = canvasSpectrum.getContext('2d');
+        const timeCanvas = document.getElementById('timeCanvas');
+        const freqCanvas = document.getElementById('freqCanvas');
+        const timeCtx = timeCanvas.getContext('2d');
+        const freqCtx = freqCanvas.getContext('2d');
 
         const waveTypeSelect = document.getElementById('waveType');
-        const sliderFreq = document.getElementById('sliderFreq');
-        const sliderAmp = document.getElementById('sliderAmp');
-        const sliderTerms = document.getElementById('sliderTerms');
+        const freqRange = document.getElementById('freqRange');
+        const ampRange = document.getElementById('ampRange');
+        const nRange = document.getElementById('nRange');
 
-        const valFreq = document.getElementById('valFreq');
-        const valAmp = document.getElementById('valAmp');
-        const valTerms = document.getElementById('valTerms');
+        const freqVal = document.getElementById('freqVal');
+        const ampVal = document.getElementById('ampVal');
+        const nVal = document.getElementById('nVal');
+        const btnPlay = document.getElementById('btnPlay');
 
-        const chkShowIdeal = document.getElementById('chkShowIdeal');
-        const chkShowFourier = document.getElementById('chkShowFourier');
-        const badgeHarmonics = document.getElementById('badge-harmonics');
-        const infoText = document.getElementById('infoText');
-        const btnAudio = document.getElementById('btnAudio');
-
-        // --- Estado Global ---
-        let params = {
-            type: 'square',
-            freq: 750,
-            amp: 50,
-            terms: 2
-        };
-
-        // --- Ajustar resolución de Canvases ---
-        function resizeCanvases() {
-            [canvasTime, canvasSpectrum].forEach(canvas => {
-                canvas.width = canvas.parentElement.clientWidth - 40;
-                canvas.height = 230;
-            });
-            draw();
-        }
-        window.addEventListener('resize', resizeCanvases);
-
-        // --- Cálculo de Harmónicos y Amplitudes ---
-        function getHarmonics() {
-            const harmonics = [];
-            const A = params.amp / 100; // Normalizado de 0 a 1
-            const f0 = params.freq;
-            const N = params.terms;
-
-            if (params.type === 'sine') {
-                harmonics.push({ freq: f0, amp: A, phase: 0 });
-            } else if (params.type === 'cosine') {
-                harmonics.push({ freq: f0, amp: A, phase: Math.PI / 2 });
-            } else if (params.type === 'square') {
-                for (let i = 0; i < N; i++) {
-                    const n = 2 * i + 1;
-                    const amp = (4 / (n * Math.PI)) * A;
-                    harmonics.push({ freq: n * f0, amp: Math.abs(amp), phase: 0, n: n });
-                }
-            } else if (params.type === 'sawtooth') {
-                for (let n = 1; n <= N; n++) {
-                    const amp = (2 / (n * Math.PI)) * A;
-                    // Alterna fase para signo
-                    const phase = (n % 2 === 0) ? Math.PI : 0;
-                    harmonics.push({ freq: n * f0, amp: amp, phase: phase, n: n });
-                }
-            } else if (params.type === 'triangle') {
-                for (let i = 0; i < N; i++) {
-                    const n = 2 * i + 1;
-                    const amp = (8 / (Math.pow(n * Math.PI, 2))) * A;
-                    harmonics.push({ freq: n * f0, amp: amp, phase: (i % 2 === 1) ? Math.PI : 0, n: n });
-                }
-            }
-            return harmonics;
-        }
-
-        // --- Evaluación de Onda Teórica (Segmentos Negras) ---
-        function evalIdealWave(t, period) {
-            const A = params.amp / 100;
-            const phase = (t % period) / period; // 0 a 1
-
-            if (params.type === 'sine') {
-                return A * Math.sin(2 * Math.PI * params.freq * t);
-            } else if (params.type === 'cosine') {
-                return A * Math.cos(2 * Math.PI * params.freq * t);
-            } else if (params.type === 'square') {
-                return phase < 0.5 ? A : -A;
-            } else if (params.type === 'sawtooth') {
-                return A * (1 - 2 * phase);
-            } else if (params.type === 'triangle') {
-                if (phase < 0.25) return A * (4 * phase);
-                if (phase < 0.75) return A * (2 - 4 * phase);
-                return A * (-4 + 4 * phase);
-            }
-            return 0;
-        }
-
-        // --- Dibujar Gráficos ---
-        function draw() {
-            drawTimeDomain();
-            drawSpectrumDomain();
-            updateInfo();
-            if (audioContext && isPlaying) {
-                updateAudioSynthesizer();
-            }
-        }
-
-        // 1. Gráfica en el Tiempo
-        function drawTimeDomain() {
-            const w = canvasTime.width;
-            const h = canvasTime.height;
-            const centerY = h / 2;
-            const scaleY = (h / 2) * 0.8;
-
-            ctxTime.clearRect(0, 0, w, h);
-
-            // Rejilla de Fondo
-            ctxTime.strokeStyle = '#1e293b';
-            ctxTime.lineWidth = 1;
-            ctxTime.beginPath();
-            for (let x = 0; x < w; x += 40) { ctxTime.moveTo(x, 0); ctxTime.lineTo(x, h); }
-            for (let y = 0; y < h; y += 30) { ctxTime.moveTo(0, y); ctxTime.lineTo(w, y); }
-            ctxTime.stroke();
-
-            // Eje Central (0V)
-            ctxTime.strokeStyle = '#475569';
-            ctxTime.beginPath();
-            ctxTime.moveTo(0, centerY);
-            ctxTime.lineTo(w, centerY);
-            ctxTime.stroke();
-
-            const cycles = 3; // Mostrar 3 periodos completos
-            const totalTime = cycles / params.freq;
-            const period = 1 / params.freq;
-
-            // A) Dibujar Onda Teórica Ideal por Segmentos (Negra / Gris Claro para contraste oscuro)
-            if (chkShowIdeal.checked && params.type !== 'sine' && params.type !== 'cosine') {
-                ctxTime.strokeStyle = '#e2e8f0'; // Línea segmento clara visible sobre fondo oscuro
-                ctxTime.lineWidth = 2.5;
-                ctxTime.beginPath();
-
-                const step = 1;
-                for (let px = 0; px <= w; px += step) {
-                    const t = (px / w) * totalTime;
-                    const val = evalIdealWave(t, period);
-                    const py = centerY - val * scaleY;
-                    if (px === 0) ctxTime.moveTo(px, py);
-                    else ctxTime.lineTo(px, py);
-                }
-                ctxTime.stroke();
-            }
-
-            // B) Dibujar Serie de Fourier (Línea Roja)
-            if (chkShowFourier.checked || params.type === 'sine' || params.type === 'cosine') {
-                const harmonics = getHarmonics();
-                ctxTime.strokeStyle = '#ef4444'; // Rojo brillante
-                ctxTime.lineWidth = 2;
-                ctxTime.beginPath();
-
-                for (let px = 0; px <= w; px++) {
-                    const t = (px / w) * totalTime;
-                    let val = 0;
-
-                    harmonics.forEach(h => {
-                        val += h.amp * Math.sin(2 * Math.PI * h.freq * t + h.phase);
-                    });
-
-                    const py = centerY - val * scaleY;
-                    if (px === 0) ctxTime.moveTo(px, py);
-                    else ctxTime.lineTo(px, py);
-                }
-                ctxTime.stroke();
-            }
-        }
-
-        // 2. Gráfica de Espectro (Bastones Discretos)
-        function drawSpectrumDomain() {
-            const w = canvasSpectrum.width;
-            const h = canvasSpectrum.height;
-            const paddingLeft = 50;
-            const paddingBottom = 40;
-            const graphW = w - paddingLeft - 20;
-            const graphH = h - paddingBottom - 20;
-
-            ctxSpectrum.clearRect(0, 0, w, h);
-
-            // Rejilla de Fondo
-            ctxSpectrum.strokeStyle = '#1e293b';
-            ctxSpectrum.lineWidth = 1;
-            ctxSpectrum.beginPath();
-            for (let y = 20; y <= h - paddingBottom; y += 30) {
-                ctxSpectrum.moveTo(paddingLeft, y);
-                ctxSpectrum.lineTo(w - 20, y);
-            }
-            ctxSpectrum.stroke();
-
-            // Ejes
-            ctxSpectrum.strokeStyle = '#475569';
-            ctxSpectrum.lineWidth = 1.5;
-            ctxSpectrum.beginPath();
-            ctxSpectrum.moveTo(paddingLeft, 10);
-            ctxSpectrum.lineTo(paddingLeft, h - paddingBottom);
-            ctxSpectrum.lineTo(w - 10, h - paddingBottom);
-            ctxSpectrum.stroke();
-
-            // Etiquetas de Ejes
-            ctxSpectrum.fillStyle = '#94a3b8';
-            ctxSpectrum.font = '11px sans-serif';
-            ctxSpectrum.fillText("Amplitud", 5, 20);
-            ctxSpectrum.fillText("Frecuencia (Hz)", w - 90, h - 10);
-
-            const harmonics = getHarmonics();
-            badgeHarmonics.innerText = `${harmonics.length} Bastón(es)`;
-
-            if (harmonics.length === 0) return;
-
-            // Frecuencia máxima a mostrar en eje X
-            const maxFreq = harmonics[harmonics.length - 1].freq * 1.25;
-
-            harmonics.forEach(harm => {
-                const xPct = harm.freq / maxFreq;
-                const px = paddingLeft + xPct * graphW;
-                const py = (h - paddingBottom) - (harm.amp * graphH * 0.85);
-
-                // Dibujar Bastón (Stem Azul)
-                ctxSpectrum.strokeStyle = '#38bdf8';
-                ctxSpectrum.lineWidth = 3;
-                ctxSpectrum.beginPath();
-                ctxSpectrum.moveTo(px, h - paddingBottom);
-                ctxSpectrum.lineTo(px, py);
-                ctxSpectrum.stroke();
-
-                // Cabeza del bastón (Punto)
-                ctxSpectrum.fillStyle = '#38bdf8';
-                ctxSpectrum.beginPath();
-                ctxSpectrum.arc(px, py, 5, 0, Math.PI * 2);
-                ctxSpectrum.fill();
-
-                // Etiqueta de Frecuencia
-                ctxSpectrum.fillStyle = '#f8fafc';
-                ctxSpectrum.font = '10px sans-serif';
-                ctxSpectrum.textAlign = 'center';
-                ctxSpectrum.fillText(`${Math.round(harm.freq)}Hz`, px, h - paddingBottom + 15);
-                ctxSpectrum.fillText(`A:${harm.amp.toFixed(2)}`, px, py - 8);
-            });
-        }
-
-        // --- Actualizar Información en Texto ---
-        function updateInfo() {
-            const h = getHarmonics();
-            if (params.type === 'sine' || params.type === 'cosine') {
-                infoText.innerHTML = `<b>Modo Puro:</b> Representa una única senoide de ${params.freq} Hz. El espectro consta de exactamente <b>1 bastón</b>.`;
-            } else {
-                infoText.innerHTML = `<b>Comprobación de Espectros:</b> Con <i>N = ${params.terms}</i> términos para la onda ${waveTypeSelect.options[waveTypeSelect.selectedIndex].text.split(' ')[0]}, se visualizan estrictamente <b>${h.length} bastones discretos</b> en las frecuencias armónicas correspondientes.`;
-            }
-        }
-
-        // --- Web Audio API para Síntesis Sonora ---
-        let audioContext = null;
-        let masterGain = null;
-        let oscillators = [];
+        let audioCtx = null;
+        let oscillator = null;
+        let gainNode = null;
         let isPlaying = false;
 
-        function initAudio() {
-            if (!audioContext) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioContext = new AudioContext();
-                masterGain = audioContext.createGain();
-                masterGain.gain.value = 0.15; // Volumen de seguridad
-                masterGain.connect(audioContext.destination);
+        function resizeCanvases() {
+            timeCanvas.width = timeCanvas.clientWidth;
+            timeCanvas.height = timeCanvas.clientHeight;
+            freqCanvas.width = freqCanvas.clientWidth;
+            freqCanvas.height = freqCanvas.clientHeight;
+        }
+
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
+
+        function draw() {
+            const type = waveTypeSelect.value;
+            const freq = parseFloat(freqRange.value);
+            const amp = parseFloat(ampRange.value) / 100.0;
+            const N = parseInt(nRange.value);
+
+            freqVal.textContent = freq;
+            ampVal.textContent = ampRange.value;
+            nVal.textContent = N;
+
+            timeCtx.clearRect(0, 0, timeCanvas.width, timeCanvas.height);
+            
+            timeCtx.strokeStyle = '#1e293b';
+            timeCtx.lineWidth = 1;
+            timeCtx.beginPath();
+            timeCtx.moveTo(0, timeCanvas.height / 2);
+            timeCtx.lineTo(timeCanvas.width, timeCanvas.height / 2);
+            timeCtx.stroke();
+
+            timeCtx.strokeStyle = '#ef4444';
+            timeCtx.lineWidth = 2;
+            timeCtx.beginPath();
+
+            const w0 = 2 * Math.PI * freq;
+            const duration = 3 / freq;
+            const width = timeCanvas.width;
+            const height = timeCanvas.height;
+            const centerY = height / 2;
+
+            let harmonicsData = [];
+
+            for (let px = 0; px < width; px++) {
+                let t = (px / width) * duration;
+                let y = 0;
+
+                if (type === 'Seno') {
+                    y = amp * Math.sin(w0 * t);
+                    if (px === 0) harmonicsData.push({f: freq, a: amp});
+                } else if (type === 'Coseno') {
+                    y = amp * Math.cos(w0 * t);
+                    if (px === 0) harmonicsData.push({f: freq, a: amp});
+                } else if (type === 'Cuadrada') {
+                    let suma = 0;
+                    for (let k = 1; k <= N; k++) {
+                        let n = 2 * k - 1;
+                        let harmonicFreq = n * freq;
+                        let harmonicAmp = (4 / (n * Math.PI));
+                        suma += Math.sin(n * w0 * t) / n;
+                        if (px === 0) harmonicsData.push({f: harmonicFreq, a: amp * harmonicAmp});
+                    }
+                    y = (4 * amp / Math.PI) * suma;
+                } else if (type === 'Rampa') {
+                    let suma = 0;
+                    for (let n = 1; n <= N; n++) {
+                        let harmonicFreq = n * freq;
+                        let harmonicAmp = (1 / (n * Math.PI));
+                        suma += Math.sin(n * w0 * t) / n;
+                        if (px === 0) harmonicsData.push({f: harmonicFreq, a: amp * harmonicAmp});
+                    }
+                    y = (amp / 2) - (amp / Math.PI) * suma;
+                } else if (type === 'Diente de Sierra') {
+                    let suma = 0;
+                    for (let n = 1; n <= N; n++) {
+                        let harmonicFreq = n * freq;
+                        let signo = Math.pow(-1, n + 1);
+                        let harmonicAmp = (2 / (n * Math.PI));
+                        suma += (signo * Math.sin(n * w0 * t)) / n;
+                        if (px === 0) harmonicsData.push({f: harmonicFreq, a: amp * harmonicAmp});
+                    }
+                    y = (2 * amp / Math.PI) * suma;
+                }
+
+                let canvasY = centerY - (y * (height * 0.35));
+                if (px === 0) timeCtx.moveTo(px, canvasY);
+                else timeCtx.lineTo(px, canvasY);
+            }
+            timeCtx.stroke();
+
+            freqCtx.clearRect(0, 0, freqCanvas.width, freqCanvas.height);
+            
+            freqCtx.strokeStyle = '#1e293b';
+            freqCtx.beginPath();
+            freqCtx.moveTo(0, freqCanvas.height - 20);
+            freqCtx.lineTo(freqCanvas.width, freqCanvas.height - 20);
+            freqCtx.stroke();
+
+            const maxFreqToShow = freq * (N > 1 ? N * 1.2 : 2);
+            
+            harmonicsData.forEach(item => {
+                let xPos = (item.f / maxFreqToShow) * freqCanvas.width;
+                let barHeight = item.a * (freqCanvas.height * 0.7);
+                let yPos = freqCanvas.height - 20 - barHeight;
+
+                if (xPos < freqCanvas.width) {
+                    freqCtx.strokeStyle = '#38bdf8';
+                    freqCtx.lineWidth = 3;
+                    freqCtx.beginPath();
+                    freqCtx.moveTo(xPos, freqCanvas.height - 20);
+                    freqCtx.lineTo(xPos, yPos);
+                    freqCtx.stroke();
+
+                    freqCtx.fillStyle = '#38bdf8';
+                    freqCtx.beginPath();
+                    freqCtx.arc(xPos, yPos, 4, 0, 2 * Math.PI);
+                    freqCtx.fill();
+                }
+            });
+        }
+
+        [waveTypeSelect, freqRange, ampRange, nRange].forEach(element => {
+            element.addEventListener('input', () => {
+                draw();
+                if (isPlaying && oscillator) {
+                    updateAudio();
+                }
+            });
+        });
+
+        function updateAudio() {
+            const freq = parseFloat(freqRange.value);
+            const amp = parseFloat(ampRange.value) / 100.0;
+            if (oscillator) {
+                oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            }
+            if (gainNode) {
+                gainNode.gain.setValueAtTime(amp * 0.2, audioCtx.currentTime);
             }
         }
 
-        function updateAudioSynthesizer() {
-            if (!isPlaying || !audioContext) return;
-
-            // Apagar osciladores actuales
-            oscillators.forEach(osc => {
-                try { osc.stop(); osc.disconnect(); } catch (e) {}
-            });
-            oscillators = [];
-
-            const harmonics = getHarmonics();
-            harmonics.forEach(h => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(h.freq, audioContext.currentTime);
-
-                // Ajustar ganancia de cada armónico proporcionalmente
-                gain.gain.setValueAtTime(h.amp, audioContext.currentTime);
-
-                osc.connect(gain);
-                gain.connect(masterGain);
-
-                osc.start();
-                oscillators.push(osc);
-            });
-        }
-
-        function toggleAudio() {
-            initAudio();
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
+        btnPlay.addEventListener('click', async () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
             }
 
-            isPlaying = !isPlaying;
+            if (!isPlaying) {
+                const freq = parseFloat(freqRange.value);
+                const amp = parseFloat(ampRange.value) / 100.0;
+                const type = waveTypeSelect.value;
 
-            if (isPlaying) {
-                btnAudio.classList.remove('off');
-                btnAudio.classList.add('on');
-                btnAudio.innerHTML = '⏹️ Detener Audio';
-                updateAudioSynthesizer();
+                oscillator = audioCtx.createOscillator();
+                gainNode = audioCtx.createGain();
+
+                oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(amp * 0.2, audioCtx.currentTime);
+
+                if (type === 'Seno') oscillator.type = 'sine';
+                else if (type === 'Coseno') oscillator.type = 'sine';
+                else if (type === 'Cuadrada') oscillator.type = 'square';
+                else if (type === 'Rampa') oscillator.type = 'triangle';
+                else if (type === 'Diente de Sierra') oscillator.type = 'sawtooth';
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+
+                isPlaying = true;
+                btnPlay.textContent = 'Detener Tono';
+                btnPlay.classList.add('active');
             } else {
-                btnAudio.classList.remove('on');
-                btnAudio.classList.add('off');
-                btnAudio.innerHTML = '🔊 Reproducir Tono (Web Audio)';
-                oscillators.forEach(osc => {
-                    try { osc.stop(); osc.disconnect(); } catch (e) {}
-                });
-                oscillators = [];
+                if (oscillator) {
+                    oscillator.stop();
+                    oscillator.disconnect();
+                }
+                isPlaying = false;
+                btnPlay.textContent = 'Reproducir Tono';
+                btnPlay.classList.remove('active');
             }
-        }
-
-        // --- Event Listeners ---
-        waveTypeSelect.addEventListener('change', (e) => {
-            params.type = e.target.value;
-            draw();
         });
 
-        sliderFreq.addEventListener('input', (e) => {
-            params.freq = parseInt(e.target.value);
-            valFreq.innerText = `${params.freq} Hz`;
-            draw();
-        });
-
-        sliderAmp.addEventListener('input', (e) => {
-            params.amp = parseInt(e.target.value);
-            valAmp.innerText = params.amp;
-            draw();
-        });
-
-        sliderTerms.addEventListener('input', (e) => {
-            params.terms = parseInt(e.target.value);
-            valTerms.innerText = params.terms;
-            draw();
-        });
-
-        chkShowIdeal.addEventListener('change', draw);
-        chkShowFourier.addEventListener('change', draw);
-        btnAudio.addEventListener('click', toggleAudio);
-
-        // Inicialización
-        window.onload = () => {
-            resizeCanvases();
-        };
+        draw();
     </script>
 </body>
+</html>
 </html>
