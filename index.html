@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador y Analizador de Series de Fourier - ESIME</title>
+    <title>Generador y Analizador de Series de Fourier - ESIME Zacatenco</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -107,6 +107,20 @@
             font-size: 1rem;
             cursor: pointer;
         }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            cursor: pointer;
+        }
         .btn-container {
             display: flex;
             gap: 10px;
@@ -154,25 +168,23 @@
 
     <div class="container">
         <div class="card">
-            <h3>Dominio del Tiempo (Reforma por Serie)</h3>
+            <h3>Dominio del Tiempo</h3>
             <div class="canvas-container">
                 <canvas id="timeCanvas"></canvas>
             </div>
             
-            <h3>Espectro de Frecuencias (Armónicos Discretos)</h3>
+            <h3>Espectro de Frecuencias (Discreto / Bastones)</h3>
             <div class="canvas-container">
                 <canvas id="freqCanvas"></canvas>
             </div>
         </div>
 
         <div class="card">
-            <h3>Parámetros de Señal</h3>
+            <h3>Controles de Onda</h3>
             
             <div class="controls-group">
-                <label for="waveType">Tipo de Onda:</label>
+                <label for="waveType">Forma de Onda:</label>
                 <select id="waveType">
-                    <option value="Seno">Seno Pura</option>
-                    <option value="Coseno">Coseno Pura</option>
                     <option value="Cuadrada" selected>Onda Cuadrada</option>
                     <option value="Rampa">Onda Rampa</option>
                     <option value="Diente de Sierra">Onda Diente de Sierra</option>
@@ -180,26 +192,31 @@
             </div>
 
             <div class="controls-group">
-                <label>Frecuencia Fundamental: <span id="freqVal">750</span> Hz</label>
-                <input type="range" id="freqRange" min="100" max="2000" step="1" value="750">
+                <label>Frecuencia Fundamental (f): <span id="freqVal">440</span> Hz</label>
+                <input type="range" id="freqRange" min="100" max="2000" step="1" value="440">
             </div>
 
             <div class="controls-group">
-                <label>Amplitud (0 - 100): <span id="ampVal">50</span></label>
+                <label>Amplitud (0 a 100): <span id="ampVal">50</span></label>
                 <input type="range" id="ampRange" min="0" max="100" step="1" value="50">
             </div>
 
             <div class="controls-group">
-                <label>Términos Armónicos (N): <span id="nVal">5</span></label>
+                <label>Número de Términos (N): <span id="nVal">5</span></label>
                 <input type="range" id="nRange" min="1" max="20" step="1" value="5">
             </div>
 
-            <div class="btn-container">
-                <button id="btnPlay">Reproducir Tono</button>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="chkTeorica" checked> Mostrar Onda Teórica por Segmentos (Blanca)</label>
+                <label><input type="checkbox" id="chkFourier" checked> Mostrar Serie de Fourier Reconstruida (Roja)</label>
             </div>
 
-            <div class="info-panel">
-                <strong>Nota:</strong> Al ajustar <em>N = 2</em> en onda cuadrada, se visualizan exactamente 2 líneas espectrales puras, validando la teoría de armónicos discretos.
+            <div class="btn-container">
+                <button id="btnPlay">Reproducir Tono (Web Audio)</button>
+            </div>
+
+            <div class="info-panel" id="infoPanel">
+                Comprobación de Espectros: Al seleccionar la señal, se visualizan los bastones discretos correspondientes a sus frecuencias armónicas.
             </div>
         </div>
     </div>
@@ -214,11 +231,14 @@
         const freqRange = document.getElementById('freqRange');
         const ampRange = document.getElementById('ampRange');
         const nRange = document.getElementById('nRange');
+        const chkTeorica = document.getElementById('chkTeorica');
+        const chkFourier = document.getElementById('chkFourier');
 
         const freqVal = document.getElementById('freqVal');
         const ampVal = document.getElementById('ampVal');
         const nVal = document.getElementById('nVal');
         const btnPlay = document.getElementById('btnPlay');
+        const infoPanel = document.getElementById('infoPanel');
 
         let audioCtx = null;
         let oscillator = null;
@@ -245,6 +265,14 @@
             ampVal.textContent = ampRange.value;
             nVal.textContent = N;
 
+            if (type === 'Cuadrada') {
+                infoPanel.innerHTML = `<strong>Comprobación Cuadrada:</strong> Con N = ${N}, contiene únicamente armónicos impares (1f, 3f, 5f...).`;
+            } else if (type === 'Rampa') {
+                infoPanel.innerHTML = `<strong>Comprobación Rampa:</strong> Con N = ${N}, contiene componente DC (A/2) y armónicos pares e impares.`;
+            } else if (type === 'Diente de Sierra') {
+                infoPanel.innerHTML = `<strong>Comprobación Diente de Sierra:</strong> Con N = ${N}, contiene armónicos con signos alternados (-1)^(n+1).`;
+            }
+
             timeCtx.clearRect(0, 0, timeCanvas.width, timeCanvas.height);
             
             timeCtx.strokeStyle = '#1e293b';
@@ -254,85 +282,120 @@
             timeCtx.lineTo(timeCanvas.width, timeCanvas.height / 2);
             timeCtx.stroke();
 
-            timeCtx.strokeStyle = '#ef4444';
-            timeCtx.lineWidth = 2;
-            timeCtx.beginPath();
-
             const w0 = 2 * Math.PI * freq;
             const duration = 3 / freq;
             const width = timeCanvas.width;
             const height = timeCanvas.height;
             const centerY = height / 2;
 
+            if (chkTeorica.checked) {
+                timeCtx.strokeStyle = '#ffffff';
+                timeCtx.lineWidth = 1.5;
+                timeCtx.beginPath();
+                for (let px = 0; px < width; px++) {
+                    let t = (px / width) * duration;
+                    let tMod = t % (1 / freq);
+                    let yTeorica = 0;
+
+                    if (type === 'Cuadrada') {
+                        yTeorica = tMod < (0.5 / freq) ? amp : -amp;
+                    } else if (type === 'Rampa') {
+                        yTeorica = amp * (tMod * freq);
+                    } else if (type === 'Diente de Sierra') {
+                        yTeorica = amp * (2 * tMod * freq - 1);
+                    }
+
+                    let canvasY = centerY - (yTeorica * (height * 0.35));
+                    if (px === 0) timeCtx.moveTo(px, canvasY);
+                    else timeCtx.lineTo(px, canvasY);
+                }
+                timeCtx.stroke();
+            }
+
             let harmonicsData = [];
 
-            for (let px = 0; px < width; px++) {
-                let t = (px / width) * duration;
-                let y = 0;
+            if (chkFourier.checked) {
+                timeCtx.strokeStyle = '#ef4444';
+                timeCtx.lineWidth = 2;
+                timeCtx.beginPath();
 
-                if (type === 'Seno') {
-                    y = amp * Math.sin(w0 * t);
-                    if (px === 0) harmonicsData.push({f: freq, a: amp});
-                } else if (type === 'Coseno') {
-                    y = amp * Math.cos(w0 * t);
-                    if (px === 0) harmonicsData.push({f: freq, a: amp});
-                } else if (type === 'Cuadrada') {
-                    let suma = 0;
+                for (let px = 0; px < width; px++) {
+                    let t = (px / width) * duration;
+                    let y = 0;
+
+                    if (type === 'Cuadrada') {
+                        let suma = 0;
+                        for (let k = 1; k <= N; k++) {
+                            let n = 2 * k - 1;
+                            let harmonicFreq = n * freq;
+                            let harmonicAmp = (4 / (n * Math.PI));
+                            suma += Math.sin(n * w0 * t) / n;
+                            if (px === 0) harmonicsData.push({ f: harmonicFreq, a: amp * harmonicAmp });
+                        }
+                        y = (4 * amp / Math.PI) * suma;
+                    } else if (type === 'Rampa') {
+                        let suma = 0;
+                        for (let n = 1; n <= N; n++) {
+                            let harmonicFreq = n * freq;
+                            let harmonicAmp = (1 / (n * Math.PI));
+                            suma += Math.sin(n * w0 * t) / n;
+                            if (px === 0) harmonicsData.push({ f: harmonicFreq, a: amp * harmonicAmp });
+                        }
+                        y = (amp / 2) - (amp / Math.PI) * suma;
+                    } else if (type === 'Diente de Sierra') {
+                        let suma = 0;
+                        for (let n = 1; n <= N; n++) {
+                            let harmonicFreq = n * freq;
+                            let signo = Math.pow(-1, n + 1);
+                            let harmonicAmp = (2 / (n * Math.PI));
+                            suma += (signo * Math.sin(n * w0 * t)) / n;
+                            if (px === 0) harmonicsData.push({ f: harmonicFreq, a: amp * harmonicAmp });
+                        }
+                        y = (2 * amp / Math.PI) * suma;
+                    }
+
+                    let canvasY = centerY - (y * (height * 0.35));
+                    if (px === 0) timeCtx.moveTo(px, canvasY);
+                    else timeCtx.lineTo(px, canvasY);
+                }
+                timeCtx.stroke();
+            } else {
+                if (type === 'Cuadrada') {
                     for (let k = 1; k <= N; k++) {
                         let n = 2 * k - 1;
-                        let harmonicFreq = n * freq;
-                        let harmonicAmp = (4 / (n * Math.PI));
-                        suma += Math.sin(n * w0 * t) / n;
-                        if (px === 0) harmonicsData.push({f: harmonicFreq, a: amp * harmonicAmp});
+                        harmonicsData.push({ f: n * freq, a: amp * (4 / (n * Math.PI)) });
                     }
-                    y = (4 * amp / Math.PI) * suma;
                 } else if (type === 'Rampa') {
-                    let suma = 0;
                     for (let n = 1; n <= N; n++) {
-                        let harmonicFreq = n * freq;
-                        let harmonicAmp = (1 / (n * Math.PI));
-                        suma += Math.sin(n * w0 * t) / n;
-                        if (px === 0) harmonicsData.push({f: harmonicFreq, a: amp * harmonicAmp});
+                        harmonicsData.push({ f: n * freq, a: amp * (1 / (n * Math.PI)) });
                     }
-                    y = (amp / 2) - (amp / Math.PI) * suma;
                 } else if (type === 'Diente de Sierra') {
-                    let suma = 0;
                     for (let n = 1; n <= N; n++) {
-                        let harmonicFreq = n * freq;
-                        let signo = Math.pow(-1, n + 1);
-                        let harmonicAmp = (2 / (n * Math.PI));
-                        suma += (signo * Math.sin(n * w0 * t)) / n;
-                        if (px === 0) harmonicsData.push({f: harmonicFreq, a: amp * harmonicAmp});
+                        harmonicsData.push({ f: n * freq, a: amp * (2 / (n * Math.PI)) });
                     }
-                    y = (2 * amp / Math.PI) * suma;
                 }
-
-                let canvasY = centerY - (y * (height * 0.35));
-                if (px === 0) timeCtx.moveTo(px, canvasY);
-                else timeCtx.lineTo(px, canvasY);
             }
-            timeCtx.stroke();
 
             freqCtx.clearRect(0, 0, freqCanvas.width, freqCanvas.height);
             
             freqCtx.strokeStyle = '#1e293b';
             freqCtx.beginPath();
-            freqCtx.moveTo(0, freqCanvas.height - 20);
-            freqCtx.lineTo(freqCanvas.width, freqCanvas.height - 20);
+            freqCtx.moveTo(0, freqCanvas.height - 25);
+            freqCtx.lineTo(freqCanvas.width, freqCanvas.height - 25);
             freqCtx.stroke();
 
             const maxFreqToShow = freq * (N > 1 ? N * 1.2 : 2);
             
             harmonicsData.forEach(item => {
                 let xPos = (item.f / maxFreqToShow) * freqCanvas.width;
-                let barHeight = item.a * (freqCanvas.height * 0.7);
-                let yPos = freqCanvas.height - 20 - barHeight;
+                let barHeight = item.a * (freqCanvas.height * 0.65);
+                let yPos = freqCanvas.height - 25 - barHeight;
 
                 if (xPos < freqCanvas.width) {
                     freqCtx.strokeStyle = '#38bdf8';
                     freqCtx.lineWidth = 3;
                     freqCtx.beginPath();
-                    freqCtx.moveTo(xPos, freqCanvas.height - 20);
+                    freqCtx.moveTo(xPos, freqCanvas.height - 25);
                     freqCtx.lineTo(xPos, yPos);
                     freqCtx.stroke();
 
@@ -340,11 +403,17 @@
                     freqCtx.beginPath();
                     freqCtx.arc(xPos, yPos, 4, 0, 2 * Math.PI);
                     freqCtx.fill();
+
+                    freqCtx.fillStyle = '#cbd5e1';
+                    freqCtx.font = '10px sans-serif';
+                    freqCtx.textAlign = 'center';
+                    freqCtx.fillText(`${Math.round(item.f)}Hz`, xPos, freqCanvas.height - 10);
+                    freqCtx.fillText(`A:${item.a.toFixed(2)}`, xPos, yPos - 8);
                 }
             });
         }
 
-        [waveTypeSelect, freqRange, ampRange, nRange].forEach(element => {
+        [waveTypeSelect, freqRange, ampRange, nRange, chkTeorica, chkFourier].forEach(element => {
             element.addEventListener('input', () => {
                 draw();
                 if (isPlaying && oscillator) {
@@ -383,9 +452,7 @@
                 oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(amp * 0.2, audioCtx.currentTime);
 
-                if (type === 'Seno') oscillator.type = 'sine';
-                else if (type === 'Coseno') oscillator.type = 'sine';
-                else if (type === 'Cuadrada') oscillator.type = 'square';
+                if (type === 'Cuadrada') oscillator.type = 'square';
                 else if (type === 'Rampa') oscillator.type = 'triangle';
                 else if (type === 'Diente de Sierra') oscillator.type = 'sawtooth';
 
@@ -402,7 +469,7 @@
                     oscillator.disconnect();
                 }
                 isPlaying = false;
-                btnPlay.textContent = 'Reproducir Tono';
+                btnPlay.textContent = 'Reproducir Tono (Web Audio)';
                 btnPlay.classList.remove('active');
             }
         });
@@ -410,5 +477,4 @@
         draw();
     </script>
 </body>
-</html>
 </html>
